@@ -32,7 +32,7 @@ const Navbar = () => {
   const isAuthPage: boolean = pathName === "/auth";
   if (isAuthPage) return null;
   return (
-    <nav className="flex justify-between items-center px-8 py-4 bg-gray-900 border-b border-gray-700 text-gray-100 shadow-md">
+    <nav className="flex justify-between items-center px-8 py-4 bg-gray-900 border-b border-gray-700 text-gray-100 shadow-md sticky z-50 top-0">
       {/* Logo */}
       <div className="text-3xl font-bold text-purple-400 hover:text-purple-300 transition cursor-pointer">
         <Link href={"/"}>LAVIO</Link>
