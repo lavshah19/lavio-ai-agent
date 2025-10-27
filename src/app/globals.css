@@ -1,6 +1,27 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+
+/* Apply this to any scrollable container */
+
+
+/* Scrollbar Track */
+
+
+/* Hide scrollbar for Chrome, Edge, and Safari */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+
+
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -120,3 +141,5 @@
     @apply bg-background text-foreground;
   }
 }
+
+

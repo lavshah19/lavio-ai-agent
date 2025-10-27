@@ -1,9 +1,16 @@
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import Link from "next/link";
 
 // app/page.tsx
-export default function Home() {
+export default async function Home() {
+    const session = await auth.api.getSession(
+    {
+        headers: await headers()
+    }
+    );
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-linear-to-b from-gray-900 to-gray-800 text-gray-100 px-4">
+    <div className="h-[calc(100vh-72px)] flex flex-col justify-center items-center bg-linear-to-b from-gray-900 to-gray-800 text-gray-100 px-4">
       {/* Header */}
       <h1 className="text-5xl font-bold mb-4 text-center text-purple-400">Welcome to Lavio</h1>
       <p className="text-xl mb-8 text-center max-w-xl text-gray-300">
@@ -18,12 +25,16 @@ export default function Home() {
         >
           Get Started
         </Link>
-        <Link
+     {
+      !session && (
+           <Link
           href="/auth"
           className="border border-gray-300 text-gray-300 font-semibold px-6 py-3 rounded-lg hover:bg-gray-700 hover:text-white transition"
         >
           Login
         </Link>
+      )
+     }
         
       </div>
 

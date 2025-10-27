@@ -5,12 +5,11 @@ const chatlayout = ({children}:{
   children: React.ReactNode;
 }) => {
   return (
-    <div className='flex'>
+    <div className='grid grid-cols-1'>
         <SideNavbar/>
-        <main className='flex-1'>
+       
             {children}
-        </main>
-        
+       
     </div>
   )
 }

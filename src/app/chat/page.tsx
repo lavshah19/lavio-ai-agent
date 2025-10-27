@@ -6,9 +6,13 @@ import { BsMicFill } from 'react-icons/bs';
 import { HiLightBulb } from 'react-icons/hi';
 import { RiChatSmile3Line } from 'react-icons/ri';
 import { Input } from '@/components/ui/input';
+import { useMessageStore } from '@/lib/store/store';
+import { useRouter } from 'next/navigation';
 
 const Chat = () => {
   const [message, setMessage] = useState('');
+  const{addMessage}=useMessageStore()
+  const router=useRouter()
   
   const suggestedPrompts = [
     { icon: <HiLightBulb />, text: "Explain quantum computing" },
@@ -16,15 +20,27 @@ const Chat = () => {
     { icon: <RiChatSmile3Line />, text: "Tell me a joke" },
   ];
 
+function handelSubmit() {
+  addMessage({ sender: "user", text: message, time: "10:00 AM" });
+  setMessage(''); // clear input
+
+  /* 
+  later here i will create a new consersation in datbase and also msg and  save msg to database and get the id of conversation and pass it in router.push 
+  with the help of zustand the data will pserserv after router.push after goin to that page i will fetch the conversation and sent messgae to backend call ai agent 
+  note: gole is to only create the save the new chat if fist msg is sent and talso url id only add if first msg has been sent 
+  */
+  router.push("/chat/1"); // navigate; no need to pass message manually
+}
+
   return (
-    <div className="h-screen bg-linear-to-br from-gray-900 via-gray-800 to-gray-900 flex justify-center items-center">
+    <div className="h-[calc(100vh-72px)]  bg-gray-900 flex justify-center items-center">
       <div className="max-w-4xl w-full px-6">
         {/* Welcome Section */}
         <div className="text-center text-white mb-8 animate-fade-in">
           <div className="flex justify-center mb-4">
             <div className="relative">
               <div className="absolute inset-0 animate-pulse bg-purple-500/20 rounded-full blur-xl"></div>
-              <IoSparkles className="text-6xl text-purple-400 relative z-10" />
+              <IoSparkles className="text-6xl text-purple-400 relative" />
             </div>
           </div>
           
@@ -86,6 +102,7 @@ const Chat = () => {
                   : 'bg-gray-700 text-gray-500 cursor-not-allowed'
               }`}
               disabled={!message}
+              onClick={handelSubmit}
             >
               <IoSend className="text-xl" />
             </button>

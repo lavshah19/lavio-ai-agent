@@ -3,8 +3,9 @@ import React, { Activity, useState } from "react";
 import { TbSquareToggle } from "react-icons/tb";
 import { MdAddToPhotos } from "react-icons/md";
 import { Button } from "../ui/button";
+import { useIsopen } from "@/lib/store/store";
 const SideNavbar = () => {
-  const [isOpen, setIsOpen] = useState(true);
+  const {isOpen, setIsOpen} = useIsopen();
   const [chats, setChats] = useState([
     { id: 1, title: "Chat with AI 1" },
     { id: 2, title: "Project discussion" },
@@ -12,7 +13,7 @@ const SideNavbar = () => {
   ]);
 
   const createNewChat = () => {
-    const newChat = { id: Date.now(), title: `New Chat ${chats.length + 1}` };
+    const newChat = { id: 1, title: `New Chat ${chats.length + 1}` };
     setChats([newChat, ...chats]);
   };
 
@@ -20,7 +21,7 @@ const SideNavbar = () => {
     <div>
       {/* Sidebar */}
       <div
-        className={`fixed top-16 left-0 h-[calc(100%-64px)] border-r border-gray-500 bg-gray-900 text-white flex flex-col p-4 transition-transform duration-300 gap-5 ${
+        className={`fixed top-16 left-0 h-[calc(100%-72px)] border-r border-gray-500 bg-gray-900 text-white flex flex-col p-4 transition-transform duration-300 gap-5 ${
           isOpen ? "translate-x-0" : "-translate-x-[75%]"
         }  w-64 z-5`}
       >
@@ -34,7 +35,7 @@ const SideNavbar = () => {
             Lavio
           </h3>
 
-          <TbSquareToggle onClick={() => setIsOpen(!isOpen)} size={24} className={`${isOpen?"rotate-0":"rotate-180"}`} />
+          <TbSquareToggle onClick={() => setIsOpen()} size={24} className={`${isOpen?"rotate-0":"rotate-180"}`} />
         </div>
 
         <Activity mode={isOpen ? "visible" : "hidden"}>
