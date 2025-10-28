@@ -15,19 +15,21 @@ datasource db {
 }
 
 model User {
-  id            String    @id @map("_id")
+  id            String         @id @map("_id")
   name          String
   email         String
-  emailVerified Boolean   @default(false)
+  emailVerified Boolean        @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @default(now()) @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
   role          String?
-  banned        Boolean?  @default(false)
+  banned        Boolean?       @default(false)
   banReason     String?
   banExpires    DateTime?
   sessions      Session[]
   accounts      Account[]
+  conversations Conversation[]
+  fileUploads   FileUpload[]
 
   @@unique([email])
   @@map("user")
@@ -77,4 +79,68 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+model Conversation {
+  id        String   @id @map("_id")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String?
+  model     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+  files    FileUpload[]
+
+  @@map("conversation")
+}
+
+model Message {
+  id             String       @id @map("_id")
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  role      MessageRole
+  content   String?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  attachedFiles FileAttachment[]
+
+  @@map("message")
+}
+
+model FileUpload {
+  id             String        @id @map("_id")
+  userId         String?
+  conversationId String?
+  user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  fileName    String
+  fileType    String
+  fileSize    Int?
+  storageUrl  String
+  embeddingId String?
+  attachments FileAttachment[]
+  createdAt   DateTime         @default(now())
+
+  @@map("file_upload")
+}
+
+model FileAttachment {
+  id        String     @id @map("_id")
+  messageId String
+  fileId    String
+  message   Message    @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  file      FileUpload @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  @@map("file_attachment")
+}
+
+enum MessageRole {
+  user
+  ai
+  system
 }
