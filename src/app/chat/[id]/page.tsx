@@ -5,14 +5,18 @@ import { FiPaperclip } from "react-icons/fi";
 import { BsMicFill } from "react-icons/bs";
 import { Input } from "@/components/ui/input";
 import { useMessageStore } from "@/lib/store/store";
+import { useParams } from "next/navigation";
 
-const SingleChat =  () => {
+const SingleChat = () => {
   type Message = {
     id: number;
     sender: "user" | "ai";
     text: string;
     time: string;
   };
+  const param = useParams();
+  console.log(param.id);
+
   const [message, setMessage] = useState("");
   const { messages: msg, clearMessages } = useMessageStore();
   console.log(msg);
@@ -27,7 +31,6 @@ here i will use the conversation id to fetch the past what data */
 
   useEffect(() => {
     fetchConversation();
-    
   }, []);
 
   // make second use effect to sent the data to backend and after that my AI agent response can be received by user

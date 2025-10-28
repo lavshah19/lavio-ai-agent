@@ -8,11 +8,13 @@ import { RiChatSmile3Line } from 'react-icons/ri';
 import { Input } from '@/components/ui/input';
 import { useMessageStore } from '@/lib/store/store';
 import { useRouter } from 'next/navigation';
+import {init } from "@paralleldrive/cuid2";
 
 const Chat = () => {
   const [message, setMessage] = useState('');
   const{addMessage}=useMessageStore()
   const router=useRouter()
+
   
   const suggestedPrompts = [
     { icon: <HiLightBulb />, text: "Explain quantum computing" },
@@ -20,16 +22,17 @@ const Chat = () => {
     { icon: <RiChatSmile3Line />, text: "Tell me a joke" },
   ];
 
-function handelSubmit() {
-  addMessage({ sender: "user", text: message, time: "10:00 AM" });
-  setMessage(''); // clear input
-
-  /* 
+    /* 
   later here i will create a new consersation in datbase and also msg and  save msg to database and get the id of conversation and pass it in router.push 
   with the help of zustand the data will pserserv after router.push after goin to that page i will fetch the conversation and sent messgae to backend call ai agent 
   note: gole is to only create the save the new chat if fist msg is sent and talso url id only add if first msg has been sent 
   */
-  router.push("/chat/1"); // navigate; no need to pass message manually
+async function handelSubmit() {
+  if(!message) return;
+  addMessage({ sender: "user", text: message, time: "10:00 AM" });
+ const id = init({}); // generate a unique ID
+  router.push(`/chat/${id()}`) // later change it to conversationId; 
+  setMessage(''); // clear input
 }
 
   return (
@@ -51,6 +54,7 @@ function handelSubmit() {
             Ask me anything or choose from suggestions below
           </p>
         </div>
+
 
         {/* Suggested Prompts */}
         <div className="flex flex-wrap justify-center gap-3 mb-8">
