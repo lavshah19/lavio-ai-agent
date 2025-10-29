@@ -8,7 +8,7 @@ import { RiChatSmile3Line } from 'react-icons/ri';
 import { Input } from '@/components/ui/input';
 import { useMessageStore } from '@/lib/store/store';
 import { useRouter } from 'next/navigation';
-import {init } from "@paralleldrive/cuid2";
+import {init,createId } from "@paralleldrive/cuid2";
 
 const Chat = () => {
   const [message, setMessage] = useState('');
@@ -29,7 +29,7 @@ const Chat = () => {
   */
 async function handelSubmit() {
   if(!message) return;
-  addMessage({ sender: "user", text: message, time: "10:00 AM" });
+  addMessage({ role: "user", content: message,createdAt:new Date });
  const id = init({}); // generate a unique ID
   router.push(`/chat/${id()}`) // later change it to conversationId; 
   setMessage(''); // clear input

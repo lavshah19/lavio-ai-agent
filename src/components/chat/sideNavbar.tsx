@@ -1,21 +1,57 @@
 "use client";
-import React, { Activity, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TbSquareToggle } from "react-icons/tb";
-import { MdAddToPhotos } from "react-icons/md";
+import { MdAddToPhotos, MdDeleteOutline } from "react-icons/md";
 import { Button } from "../ui/button";
 import { useIsopen } from "@/lib/store/store";
-const SideNavbar = () => {
-  const {isOpen, setIsOpen} = useIsopen();
-  const [chats, setChats] = useState([
-    { id: 1, title: "Chat with AI 1" },
-    { id: 2, title: "Project discussion" },
-    { id: 3, title: "Random questions" },
-  ]);
+import { getUserConversations, deleteUserConversation } from "@/action/chatQuery-action";
+// <-- import your delete action
+import { useRouter } from "next/navigation";
+import { toast } from "sonner"; // optional: use toast for feedback
 
-  const createNewChat = () => {
-    const newChat = { id: 1, title: `New Chat ${chats.length + 1}` };
-    setChats([newChat, ...chats]);
-  };
+type Conversation = {
+  id: string;
+  userId: string;
+  title: string | null;
+  model: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+const SideNavbar = () => {
+  const { isOpen, setIsOpen } = useIsopen();
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetchAllConversations();
+  }, []);
+
+  async function fetchAllConversations() {
+    try {
+      const listOfConversations = await getUserConversations();
+      setConversations(listOfConversations || []);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function handleDeleteConversation(id: string) {
+    try {
+      const res = await deleteUserConversation(id);
+
+      if (res?.success) {
+        toast.success(res.message || "Conversation deleted");
+        // remove deleted conversation from state
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+      } else {
+        toast.error(res?.message || "Failed to delete conversation");
+      }
+    } catch (error) {
+      console.error("Error deleting conversation:", error);
+      toast.error("Something went wrong");
+    }
+  }
 
   return (
     <div>
@@ -25,8 +61,8 @@ const SideNavbar = () => {
           isOpen ? "translate-x-0" : "-translate-x-[75%]"
         }  w-64 z-5`}
       >
-        {/* New Chat Button */}
-        <div className="flex justify-between">
+        {/* Header */}
+        <div className="flex justify-between items-center">
           <h3
             className={`text-xl font-semibold ${
               isOpen ? "text-center" : "text-right"
@@ -35,38 +71,55 @@ const SideNavbar = () => {
             Lavio
           </h3>
 
-          <TbSquareToggle onClick={() => setIsOpen()} size={24} className={`${isOpen?"rotate-0":"rotate-180"}`} />
+          <TbSquareToggle
+            onClick={() => setIsOpen()}
+            size={24}
+            className={`cursor-pointer transition-transform ${
+              isOpen ? "rotate-0" : "rotate-180"
+            }`}
+          />
         </div>
 
-        <Activity mode={isOpen ? "visible" : "hidden"}>
+        {/* New Chat Button */}
+        {isOpen && (
           <Button
-            onClick={createNewChat}
+            onClick={() => router.push("/chat")}
             className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded hover:bg-gray-700 mb-4 w-full"
           >
             <MdAddToPhotos />
             New Chat
           </Button>
-        </Activity>
+        )}
         {!isOpen && (
-          <div className="flex justify-end font-bold mt-4">
-          
+          <div  onClick={() => router.push("/chat")} className="flex justify-end font-bold mt-4 cursor-pointer">
             <MdAddToPhotos size={20} />
           </div>
         )}
 
         {/* Chat List */}
-        <Activity mode={isOpen ? "visible" : "hidden"}>
+        {isOpen && (
           <div className="flex-1 overflow-y-auto">
-            {chats.map((chat) => (
-              <Button
+            {conversations.map((chat) => (
+              <div
                 key={chat.id}
-                className="bg-gray-800 p-3 rounded mb-2 hover:bg-gray-700 cursor-pointer truncate w-full"
+                className="flex items-center justify-between bg-gray-800 p-2 rounded mb-2 hover:bg-gray-700 group "
               >
-                {chat.title}
-              </Button>
+                <button
+                  onClick={() => router.push(`/chat/${chat.id}`)}
+                  className="truncate text-left flex-1 cursor-pointer"
+                >
+                  {chat.title || "Untitled Chat"}
+                </button>
+
+                <MdDeleteOutline
+                  size={20}
+                  onClick={() => handleDeleteConversation(chat.id)}
+                  className="text-red-400 opacity-70 hover:opacity-100 hover:text-red-500 cursor-pointer transition hidden group-hover:block"
+                />
+              </div>
             ))}
           </div>
-        </Activity>
+        )}
       </div>
     </div>
   );

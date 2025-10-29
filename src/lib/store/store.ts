@@ -11,26 +11,23 @@ export const useIsopen = create<Store>()((set) => ({
 }));
 
 type Message = {
-  id: number;
-  sender: "user" | "ai";
-  text: string;
-  time: string;
+  id: string;
+  role: "user" | "ai";
+  content: string;
+  createdAt:Date;
 };
 
 type MessageStore = {
-  messages: Message[];
+  initialMessage: Message | null;
   addMessage: (message: Omit<Message, "id">) => void;
   clearMessages: () => void;
 };
 
 export const useMessageStore = create<MessageStore>((set, get) => ({
-  messages: [],
+   initialMessage: null,
   addMessage: (message) =>
     set({
-      messages: [
-        ...get().messages,
-        { id: Date.now(), ...message }, // auto-generate unique ID
-      ],
+      initialMessage: { id: Date.now().toLocaleString(), ...message }, // auto-generate unique ID
     }),
-  clearMessages: () => set({ messages: [] }),
+  clearMessages: () => set({  initialMessage: null }),
 }));

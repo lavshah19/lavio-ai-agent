@@ -73,7 +73,14 @@ export async function ConversationWithAgent(formData: FormData) {
     const conversationId = formData.get("conversationId") as string;
     const aiResponse: string = await mainAgent(formData);
 
-    const aiMsg = await model.invoke([
+
+    // check if conversation already exist or not
+    const isConversationAlreadyExisted = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+    });
+    if (!isConversationAlreadyExisted) {
+
+    const aiMsgForTitle = await model.invoke([
       {
         role: "system",
         content:
@@ -81,17 +88,11 @@ export async function ConversationWithAgent(formData: FormData) {
       },
       { role: "user", content: formData.get("userMessage") as string },
     ]);
-
-    // check if conversation already exist or not
-    const isConversationAlreadyExisted = await prisma.conversation.findUnique({
-      where: { id: conversationId },
-    });
-    if (!isConversationAlreadyExisted) {
       const conversation = await prisma.conversation.create({
         data: {
           id: conversationId,
           userId: session.user.id,
-          title: aiMsg.content as string,
+          title: aiMsgForTitle.content as string,
           model: "groq",
         },
       });
@@ -109,7 +110,7 @@ export async function ConversationWithAgent(formData: FormData) {
   prisma.message.create({ data: { conversationId, role: "ai", content: aiResponse } })
 ]);
 
-return {userMessage:userMsg,AIMessage:aiMsg}
+return {AIMessage:{id:aiMsg.id,content:aiMsg.content,createdAt:aiMsg.createdAt,role:"ai"}}
 
     }
   } catch (error) {
@@ -133,9 +134,6 @@ async function mainAgent(formData: FormData): Promise<string> {
     },
     langGraphConfig
   );
-  // console.log(`You entered: ${userPrompt}`);
-  // console.log(lastState,"lastState..........")
-  //   console.log("AI:", lastState.messages[lastState.messages.length - 1].content);
 
   return lastState.messages[lastState.messages.length - 1].content as string;
 }
