@@ -11,8 +11,8 @@ import Markdown from "react-markdown";
 import { getConversationMessages } from "@/action/chatQuery-action";
 import { toast } from "sonner";
 import { init, createId } from "@paralleldrive/cuid2";
-const SingleChat = () => {
-  type Message = {
+import Thinking from "@/components/chat/Thinking";
+ type Message = {
     id: string;
     role: "user" | "ai" | "system";
     content: string | null;
@@ -22,7 +22,9 @@ const SingleChat = () => {
     message: string;
     conversations: Message[];
   };
-
+const SingleChat = () => {
+ 
+const [isThinking, setIsThinking] = useState(false); 
   const param = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -56,66 +58,53 @@ const SingleChat = () => {
   }
 
   // Handle send
-  async function handleSend() {
-    if (!inputValue.trim()) return;
+// ... inside SingleChat component
 
-    const newMessage: Message = {
-      id: createId(),
-      role: "user",
-      content: inputValue,
-    };
+async function handleSend(initialMessage?: string) {
+  const userContent = initialMessage || inputValue;
+  if (!userContent.trim()) return;
 
-    // console.log("inside handelSned", newMessage);
+  const newMessage: Message = {
+    id: createId(),
+    role: "user",
+    content: userContent,
+  };
 
-    setMessages((prev) => [...prev, newMessage]);
+  setMessages((prev) => [...prev, newMessage]);
+  setInputValue(""); // Clear input immediately for better UX
+  setIsThinking(true); // <-- START thinking
 
-    const formData = new FormData();
-    formData.set("userMessage", newMessage.content as string);
-    formData.set("conversationId", param.id as string);
-    setInputValue("");
+  const formData = new FormData();
+  formData.set("userMessage", userContent as string);
+  formData.set("conversationId", param.id as string);
 
+  try {
     const aiResponse = await ConversationWithAgent(formData);
-    if (aiResponse) {
+    
+    setIsThinking(false); // <-- STOP thinking
+
+    if (aiResponse?.AIMessage) {
       const aiMessage: Message = {
         id: createId(),
         role: "ai",
-        content: aiResponse.AIMessage.content || "",
+        content: aiResponse.AIMessage.content || "Sorry, I encountered an issue.",
       };
       setMessages((prev) => [...prev, aiMessage]);
+    } else {
+      // Handle cases where response is not as expected
+      toast.error("Failed to get a response from the AI.");
     }
-
-    // clearMessages();
+  } catch (error) {
+    console.error("Error in ConversationWithAgent:", error);
+    setIsThinking(false); // <-- STOP thinking on error too
+    toast.error("An unexpected error occurred.");
   }
 
-  async function handleInitialSend(initialMessage: string) {
-    if (!initialMessage.trim()) return;
 
-    const newMessage: Message = {
-      id: createId(),
-      role: "user",
-      content: initialMessage,
-    };
-
-    setMessages([newMessage]);
-
-    const formData = new FormData();
-    formData.set("userMessage", newMessage.content as string);
-    formData.set("conversationId", param.id as string);
-    // console.log("inside handelinitalSned", newMessage);
-    // console.log("inputvalue", inputValue);
-
-    const aiResponse = await ConversationWithAgent(formData);
-    if (aiResponse) {
-      const aiMessage: Message = {
-        id: createId(),
-        role: "ai",
-        content: aiResponse.AIMessage.content || "",
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    }
-    // setInputValue("");
+  if (initialMessage) {
     clearMessages();
   }
+}
 
   useEffect(() => {
     if (initialMessage) {
@@ -123,7 +112,7 @@ const SingleChat = () => {
       if (hasFetched.current) return;
       hasFetched.current = true;
 
-      handleInitialSend(initialMessage?.content);
+      handleSend(initialMessage?.content);
       //  clearMessages();
     } else {
       fetchConversation();
@@ -166,17 +155,13 @@ const SingleChat = () => {
                     <Markdown>{msg.content}</Markdown>
                   </div>
                 </div>
-                {/* <p
-                  className={`text-xs text-gray-500 mt-1 px-2 ${
-                    msg.role === "user" ? "text-right" : "text-left"
-                  }`}
-                >
-                  {msg.createdAt.toLocaleString()}
-                </p> */}
               </div>
             </div>
           ))}
-          {/* 👇 Invisible div to scroll into view */}
+              {isThinking && (
+     <Thinking/>
+    )}
+          {/*  Invisible div to scroll into view */}
           <div ref={bottomRef}></div>
         </div>
       </div>
@@ -199,7 +184,7 @@ const SingleChat = () => {
                 value={inputValue}
                 onChange={handleInputChange}
                 placeholder="Ask me anything..."
-                className="flex-1 px-2 py-3 bg-transparent text-white placeholder-gray-500 focus:outline-none text-lg border-none focus:ring-0"
+                className="flex-1 px-2 py-3 bg-transparent text-white placeholder-gray-500 focus:outline-none text-lg border-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
 
@@ -210,7 +195,7 @@ const SingleChat = () => {
 
               {/* Send */}
               <button
-                onClick={handleSend}
+                onClick={() => handleSend()}
                 className={`p-3 rounded-full transition-all duration-300 ${
                   inputValue
                     ? "bg-linear-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:shadow-purple-500/25 hover:scale-105"

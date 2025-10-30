@@ -90,7 +90,7 @@ async function handelSubmit() {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Ask me anything..."
               className="flex-1 px-2 py-3 bg-transparent text-white placeholder-gray-500 focus:outline-none text-lg border-none focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0"
-              onKeyDown={(e) => e.key === 'Enter' && message && console.log('Send:', message)}
+              onKeyDown={(e) => e.key === 'Enter' && message && handelSubmit() }
             />
 
             {/* Mic Button */}
