@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { ChatGroq } from "@langchain/groq";
 import { TavilySearch } from "@langchain/tavily";
+
 import {
   MessagesAnnotation,
   StateGraph,
@@ -13,13 +14,20 @@ import {
 } from "@langchain/langgraph";
 
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { AIMessage } from "@langchain/core/messages";
+
+import z from "zod";
 
 const tool = new TavilySearch({
   maxResults: 3,
   topic: "general",
   tavilyApiKey: process.env.TAVILY_API_KEY,
 });
+
+const FormDataSchema = z.object({
+  userMessage: z.string(),
+  conversationId: z.string(),
+});
+export type FormDtaFormValues = z.infer<typeof FormDataSchema>;
 
 const checkpointer = new MemorySaver();
 const tools = [tool];
@@ -70,27 +78,28 @@ export async function ConversationWithAgent(formData: FormData) {
   }
 
   try {
-    const conversationId = formData.get("conversationId") as string;
-    const aiResponse: string = await mainAgent(formData);
-
+    const validateFormData = FormDataSchema.parse({
+      userMessage: formData.get("userMessage"),
+      conversationId: formData.get("conversationId"),
+    });
+    const aiResponse: string = await mainAgent(validateFormData);
 
     // check if conversation already exist or not
     const isConversationAlreadyExisted = await prisma.conversation.findUnique({
-      where: { id: conversationId },
+      where: { id: validateFormData.conversationId },
     });
     if (!isConversationAlreadyExisted) {
-
-    const aiMsgForTitle = await model.invoke([
-      {
-        role: "system",
-        content:
-          "You are a helpful assistant. Generate a clear and concise title for the user's message. Return only the title text, without quotes or extra words.",
-      },
-      { role: "user", content: formData.get("userMessage") as string },
-    ]);
+      const aiMsgForTitle = await model.invoke([
+        {
+          role: "system",
+          content:
+            "You are a helpful assistant. Generate a clear and concise title for the user's message. Return only the title text, without quotes or extra words.",
+        },
+        { role: "user", content: validateFormData.userMessage },
+      ]);
       const conversation = await prisma.conversation.create({
         data: {
-          id: conversationId,
+          id: validateFormData.conversationId,
           userId: session.user.id,
           title: aiMsgForTitle.content as string,
           model: "groq",
@@ -100,40 +109,69 @@ export async function ConversationWithAgent(formData: FormData) {
     // 2. Create a new conversation
 
     // 3. Get the user's first message from form data
-    const userMessage = formData.get("userMessage");
-    if (typeof userMessage === "string" && userMessage.trim() !== "") {
-      // 4. Save the message in the Message model
 
-      // 5. Save the AI's response in the Message model
-  const [userMsg, aiMsg] = await prisma.$transaction([
-  prisma.message.create({ data: { conversationId, role: "user", content: userMessage } }),
-  prisma.message.create({ data: { conversationId, role: "ai", content: aiResponse } })
-]);
+    // 4. Save the message in the Message model
 
-return {AIMessage:{id:aiMsg.id,content:aiMsg.content,createdAt:aiMsg.createdAt,role:"ai"}}
+    // 5. Save the AI's response in the Message model
+    const [userMsg, aiMsg] = await prisma.$transaction([
+      prisma.message.create({
+        data: {
+          conversationId: validateFormData.conversationId,
+          role: "user",
+          content: validateFormData.userMessage,
+        },
+      }),
+      prisma.message.create({
+        data: {
+          conversationId: validateFormData.conversationId,
+          role: "ai",
+          content: aiResponse,
+        },
+      }),
+    ]);
 
-    }
+    return {
+      AIMessage: {
+        id: aiMsg.id,
+        content: aiMsg.content,
+        createdAt: aiMsg.createdAt,
+        role: "ai",
+      },
+    };
   } catch (error) {
     console.error("Error creating user message:", error);
     throw new Error("Failed to create user message");
   }
 }
 
-async function mainAgent(formData: FormData): Promise<string> {
-  const userMessage = formData.get("userMessage");
-  const converstionId = formData.get("conversationId") as string;
+async function mainAgent(formData: FormDtaFormValues): Promise<string> {
+  const userMessage = formData.userMessage;
+  const converstionId = formData.conversationId;
   const langGraphConfig = {
     configurable: {
       thread_id: converstionId,
     },
   };
+  const systemMessage =
+    "You are a helpful expert who provides concise answers.";
 
-  const lastState = await graph.invoke(
-    {
-      messages: [{ role: "user", content: userMessage as string }],
-    },
-    langGraphConfig
-  );
+  const initialState = {
+    messages: [
+      { role: "system", content: systemMessage },
+      { role: "user", content: userMessage },
+    ],
+  };
 
-  return lastState.messages[lastState.messages.length - 1].content as string;
+  // Now, invoke the graph with this initial state
+  const lastState = await graph.invoke(initialState, langGraphConfig);
+
+  const lastMessage = lastState.messages.at(-1);
+
+  if (!lastMessage) throw new Error("No messages found in lastState");
+
+  if (typeof lastMessage.content !== "string") {
+    throw new Error("Unexpected message content type");
+  }
+
+  return lastMessage.content;
 }

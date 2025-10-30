@@ -29,7 +29,7 @@ const Chat = () => {
   */
 async function handelSubmit() {
   if(!message) return;
-  addMessage({ role: "user", content: message,createdAt:new Date });
+  addMessage({ role: "user", content: message, });
  const id = init({}); // generate a unique ID
   router.push(`/chat/${id()}`) // later change it to conversationId; 
   setMessage(''); // clear input

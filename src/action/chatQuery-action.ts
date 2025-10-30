@@ -17,15 +17,30 @@ export async function getConversationMessages(conversationId: string) {
       throw new Error("Unauthorized user");
     }
 
+      const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+    });
+
+    if (!conversation) {
+      return { success: false, message: "Conversation does not exist",conversations:[] };
+    }
+
+    // Optional: check ownership (if conversation has userId field)
+    if (conversation.userId !== session.user.id) {
+      return { success: false, message: "You do not own this conversation",conversations:[]};
+    }
+
     // 2. Fetch messages for the conversation
     const messages = await prisma.message.findMany({
       where: { conversationId },
       orderBy: { createdAt: "asc" },
     });
 
-    return messages;
+    return { success: true, message: "conversation fetch sucesfully",conversations:messages }; 
   } catch (error) {
     console.error("Error fetching conversation messages:", error);
+        return { success: false, message: "conversation fetch sucesfully",conversations:[] }; 
+
   }
 }
 
@@ -46,10 +61,11 @@ export async function getUserConversations() {
       where: { userId: session.user.id },
       orderBy: { updatedAt: "desc" },
     });
-
-    return conversations;
+     return { success: true, message: "conversation fetch sucesfully",conversations:conversations };
+   
   } catch (error) {
     console.error("Error fetching user conversations:", error);
+      return { success: true, message: "conversation fetch sucesfully",conversations:[] };
   }
 }
 //delete conversation

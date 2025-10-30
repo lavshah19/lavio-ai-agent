@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { TbSquareToggle } from "react-icons/tb";
 import { MdAddToPhotos, MdDeleteOutline } from "react-icons/md";
 import { Button } from "../ui/button";
-import { useIsopen } from "@/lib/store/store";
+import { useIsopen, useMessageStore } from "@/lib/store/store";
 import { getUserConversations, deleteUserConversation } from "@/action/chatQuery-action";
 // <-- import your delete action
 import { useRouter } from "next/navigation";
@@ -17,20 +17,27 @@ type Conversation = {
   createdAt: Date;
   updatedAt: Date;
 };
+type ServerActionResponse = {
+  success: boolean;
+  message: string;
+  conversations?: Conversation[];
+};
 
 const SideNavbar = () => {
   const { isOpen, setIsOpen } = useIsopen();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const router = useRouter();
+  const { initialMessage, clearMessages } = useMessageStore();
+
 
   useEffect(() => {
     fetchAllConversations();
-  }, []);
+  }, [initialMessage]);
 
   async function fetchAllConversations() {
     try {
-      const listOfConversations = await getUserConversations();
-      setConversations(listOfConversations || []);
+      const listOfConversations:ServerActionResponse = await getUserConversations();
+      setConversations(listOfConversations.conversations || []);
     } catch (error) {
       console.error(error);
     }
@@ -38,12 +45,13 @@ const SideNavbar = () => {
 
   async function handleDeleteConversation(id: string) {
     try {
-      const res = await deleteUserConversation(id);
+      const res:ServerActionResponse = await deleteUserConversation(id);
 
       if (res?.success) {
         toast.success(res.message || "Conversation deleted");
         // remove deleted conversation from state
         setConversations((prev) => prev.filter((c) => c.id !== id));
+        router.push("/chat"); // redirect to chat home after deletion
       } else {
         toast.error(res?.message || "Failed to delete conversation");
       }

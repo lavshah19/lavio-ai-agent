@@ -9,13 +9,18 @@ import { useParams } from "next/navigation";
 import { ConversationWithAgent } from "@/action/chat-action";
 import Markdown from "react-markdown";
 import { getConversationMessages } from "@/action/chatQuery-action";
-
+import { toast } from "sonner";
+import { init, createId } from "@paralleldrive/cuid2";
 const SingleChat = () => {
   type Message = {
     id: string;
     role: "user" | "ai" | "system";
     content: string | null;
-    createdAt: Date;
+  };
+  type ConversationFetchResponse = {
+    success: boolean;
+    message: string;
+    conversations: Message[];
   };
 
   const param = useParams();
@@ -25,18 +30,20 @@ const SingleChat = () => {
 
   // Ref for auto-scroll
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const hasFetched = useRef(false);
 
-async function fetchConversation() {
-  const fetchedMessages = (await getConversationMessages(param.id as string)) ?? [];
+  async function fetchConversation() {
+    const fetchedMessages: ConversationFetchResponse =
+      (await getConversationMessages(param.id as string)) ?? [];
 
-  const parsedMessages = fetchedMessages.map((msg) => ({
-    ...msg,
-    createdAt: new Date(msg.createdAt),
-  }));
-
-  setMessages(parsedMessages);
-}
-
+    if (fetchedMessages.success && fetchedMessages.conversations.length > 0) {
+      const parsedMessages = fetchedMessages.conversations;
+      setMessages(parsedMessages);
+    } else {
+      toast.error(fetchedMessages.message || "something went wrong");
+      setMessages([]);
+    }
+  }
 
   // Scroll to bottom when messages update
   useEffect(() => {
@@ -49,42 +56,75 @@ async function fetchConversation() {
   }
 
   // Handle send
-  async function handleSend(initialMessage?:string) {
-    if (!inputValue.trim()&&!initialMessage?.trim()) return;
+  async function handleSend() {
+    if (!inputValue.trim()) return;
 
     const newMessage: Message = {
-      id: Date.now().toLocaleString(),
+      id: createId(),
       role: "user",
-      content:  initialMessage || inputValue,
-      createdAt: new Date(),
+      content: inputValue,
     };
 
+    // console.log("inside handelSned", newMessage);
+
     setMessages((prev) => [...prev, newMessage]);
-    setInputValue("");
 
     const formData = new FormData();
-    formData.set("userMessage", initialMessage || inputValue);
+    formData.set("userMessage", newMessage.content as string);
     formData.set("conversationId", param.id as string);
+    setInputValue("");
 
     const aiResponse = await ConversationWithAgent(formData);
     if (aiResponse) {
       const aiMessage: Message = {
-        id: Date.now().toLocaleString(),
+        id: createId(),
         role: "ai",
         content: aiResponse.AIMessage.content || "",
-        createdAt: new Date(),
       };
       setMessages((prev) => [...prev, aiMessage]);
     }
 
+    // clearMessages();
+  }
+
+  async function handleInitialSend(initialMessage: string) {
+    if (!initialMessage.trim()) return;
+
+    const newMessage: Message = {
+      id: createId(),
+      role: "user",
+      content: initialMessage,
+    };
+
+    setMessages([newMessage]);
+
+    const formData = new FormData();
+    formData.set("userMessage", newMessage.content as string);
+    formData.set("conversationId", param.id as string);
+    // console.log("inside handelinitalSned", newMessage);
+    // console.log("inputvalue", inputValue);
+
+    const aiResponse = await ConversationWithAgent(formData);
+    if (aiResponse) {
+      const aiMessage: Message = {
+        id: createId(),
+        role: "ai",
+        content: aiResponse.AIMessage.content || "",
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+    }
+    // setInputValue("");
     clearMessages();
   }
 
   useEffect(() => {
     if (initialMessage) {
       // setMessages([initialMessage]);
-      // handleSend(initialMessage?.content)
-       clearMessages();
+      if (hasFetched.current) return;
+      hasFetched.current = true;
+
+      handleInitialSend(initialMessage?.content);
+      //  clearMessages();
     } else {
       fetchConversation();
     }
@@ -170,7 +210,7 @@ async function fetchConversation() {
 
               {/* Send */}
               <button
-                onClick={()=>handleSend}
+                onClick={handleSend}
                 className={`p-3 rounded-full transition-all duration-300 ${
                   inputValue
                     ? "bg-linear-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg hover:shadow-purple-500/25 hover:scale-105"
