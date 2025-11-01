@@ -12,22 +12,39 @@ import { getConversationMessages } from "@/action/chatQuery-action";
 import { toast } from "sonner";
 import { init, createId } from "@paralleldrive/cuid2";
 import Thinking from "@/components/chat/Thinking";
- type Message = {
-    id: string;
-    role: "user" | "ai" | "system";
-    content: string | null;
-  };
-  type ConversationFetchResponse = {
-    success: boolean;
-    message: string;
-    conversations: Message[];
-  };
+type FileUpload = {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize?: number | null;
+  storageUrl: string;
+  embeddingId?: string | null;
+};
+
+type FileAttachment = {
+  id: string;
+  messageId: string;
+  fileId: string;
+  file: FileUpload;
+};
+
+type Message = {
+  id: string;
+  role: "user" | "ai" | "system";
+  content: string | null;
+  attachedFiles: FileAttachment[]; // added relation
+};
+
+type ConversationFetchResponse = {
+  success: boolean;
+  message: string;
+  conversations: Message[];
+};
 const SingleChat = () => {
- 
-const [isThinking, setIsThinking] = useState(false); 
+  const [isThinking, setIsThinking] = useState(false);
   const param = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState<string>("");
   const { initialMessage, clearMessages } = useMessageStore();
 
   // Ref for auto-scroll
@@ -58,53 +75,55 @@ const [isThinking, setIsThinking] = useState(false);
   }
 
   // Handle send
-// ... inside SingleChat component
+  // ... inside SingleChat component
 
-async function handleSend(initialMessage?: string) {
-  const userContent = initialMessage || inputValue;
-  if (!userContent.trim()) return;
+  async function handleSend(initialMessage?: string | null) {
+    const userContent = initialMessage || inputValue;
+    if (!userContent.trim()) return;
 
-  const newMessage: Message = {
-    id: createId(),
-    role: "user",
-    content: userContent,
-  };
+    const newMessage: Message = {
+      id: createId(),
+      role: "user",
+      content: userContent,
+      attachedFiles: [],
+    };
 
-  setMessages((prev) => [...prev, newMessage]);
-  setInputValue(""); // Clear input immediately for better UX
-  setIsThinking(true); // <-- START thinking
+    setMessages((prev) => [...prev, newMessage]);
+    setInputValue(""); // Clear input immediately for better UX
+    setIsThinking(true); // <-- START thinking
 
-  const formData = new FormData();
-  formData.set("userMessage", userContent as string);
-  formData.set("conversationId", param.id as string);
+    const formData = new FormData();
+    formData.set("userMessage", userContent as string);
+    formData.set("conversationId", param.id as string);
 
-  try {
-    const aiResponse = await ConversationWithAgent(formData);
-    
-    setIsThinking(false); // <-- STOP thinking
+    try {
+      const aiResponse = await ConversationWithAgent(formData);
 
-    if (aiResponse?.AIMessage) {
-      const aiMessage: Message = {
-        id: createId(),
-        role: "ai",
-        content: aiResponse.AIMessage.content || "Sorry, I encountered an issue.",
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-    } else {
-      // Handle cases where response is not as expected
-      toast.error("Failed to get a response from the AI.");
+      setIsThinking(false); // <-- STOP thinking
+
+      if (aiResponse?.AIMessage) {
+        const aiMessage: Message = {
+          id: createId(),
+          role: "ai",
+          content:
+            aiResponse.AIMessage.content || "Sorry, I encountered an issue.",
+          attachedFiles: [],
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      } else {
+        // Handle cases where response is not as expected
+        toast.error("Failed to get a response from the AI.");
+      }
+    } catch (error) {
+      console.error("Error in ConversationWithAgent:", error);
+      setIsThinking(false); // <-- STOP thinking on error too
+      toast.error("An unexpected error occurred.");
     }
-  } catch (error) {
-    console.error("Error in ConversationWithAgent:", error);
-    setIsThinking(false); // <-- STOP thinking on error too
-    toast.error("An unexpected error occurred.");
-  }
 
-
-  if (initialMessage) {
-    clearMessages();
+    if (initialMessage) {
+      clearMessages();
+    }
   }
-}
 
   useEffect(() => {
     if (initialMessage) {
@@ -154,13 +173,36 @@ async function handleSend(initialMessage?: string) {
                   <div className="whitespace-pre-wrap wrap-break-word hide-scrollbar overflow-x-auto prose prose-invert max-w-none">
                     <Markdown>{msg.content}</Markdown>
                   </div>
+
+                  {/* ✅ New Section: show attached images */}
+                  {msg.attachedFiles?.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {msg.attachedFiles.map((attachment) => (
+                        <div
+                          key={attachment.id}
+                          className="relative group w-32 h-32 overflow-hidden rounded-lg border border-gray-700 hover:border-purple-500 transition-all"
+                        >
+                          {attachment.file.fileType.startsWith("image/") ? (
+                            <img
+                              src={attachment.file.storageUrl}
+                              alt={attachment.file.fileName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full text-xs text-gray-400 bg-gray-900">
+                              {attachment.file.fileName}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           ))}
-              {isThinking && (
-     <Thinking/>
-    )}
+
+          {isThinking && <Thinking />}
           {/*  Invisible div to scroll into view */}
           <div ref={bottomRef}></div>
         </div>

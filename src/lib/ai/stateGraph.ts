@@ -17,8 +17,16 @@ async function mockLlm(state: any) {
 }
 
 function shouldUseTool(state: any) {
-  const last = state.messages[state.messages.length - 1];
-  return last.tool_calls?.length > 0 ? "tool_node" : END;
+    const lastMessage = state.messages[state.messages.length - 1];
+
+  // Only go to tool_node if the last message actually HAS tool calls
+  // and it’s from the model, not the tool’s own output.
+  if (lastMessage.tool_calls && lastMessage.tool_calls.length > 0) {
+    return "tool_node";
+  }
+
+  // Otherwise, finish gracefully.
+  return END;
 }
 
 export const graph = new StateGraph(MessagesAnnotation)

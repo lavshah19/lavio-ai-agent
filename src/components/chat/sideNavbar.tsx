@@ -6,7 +6,7 @@ import { Button } from "../ui/button";
 import { useIsopen, useMessageStore } from "@/lib/store/store";
 import { getUserConversations, deleteUserConversation } from "@/action/chatQuery-action";
 // <-- import your delete action
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner"; // optional: use toast for feedback
 
 type Conversation = {
@@ -28,8 +28,9 @@ const SideNavbar = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const router = useRouter();
   const { initialMessage, clearMessages } = useMessageStore();
-
-
+  const param = useParams<{id:string}>();
+ 
+// console.log(param)
   useEffect(() => {
     fetchAllConversations();
   }, [initialMessage]);
@@ -82,7 +83,7 @@ const SideNavbar = () => {
           <TbSquareToggle
             onClick={() => setIsOpen()}
             size={24}
-            className={`cursor-pointer transition-transform ${
+            className={`cursor-pointer transition-transform duration-100 ${
               isOpen ? "rotate-0" : "rotate-180"
             }`}
           />
@@ -92,7 +93,7 @@ const SideNavbar = () => {
         {isOpen && (
           <Button
             onClick={() => router.push("/chat")}
-            className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded hover:bg-gray-700 mb-4 w-full"
+            className="flex items-center gap-2 bg-gray-800 px-4 py-2 rounded hover:bg-gray-700 mb-4 w-full cursor-pointer"
           >
             <MdAddToPhotos />
             New Chat
@@ -105,29 +106,42 @@ const SideNavbar = () => {
         )}
 
         {/* Chat List */}
-        {isOpen && (
-          <div className="flex-1 overflow-y-auto">
-            {conversations.map((chat) => (
-              <div
-                key={chat.id}
-                className="flex items-center justify-between bg-gray-800 p-2 rounded mb-2 hover:bg-gray-700 group "
-              >
-                <button
-                  onClick={() => router.push(`/chat/${chat.id}`)}
-                  className="truncate text-left flex-1 cursor-pointer"
-                >
-                  {chat.title || "Untitled Chat"}
-                </button>
+       {/* Chat List */}
+{isOpen && (
+  <div className="flex-1 overflow-y-auto transition-all">
+    {conversations.map((chat) => {
+      const isActive = param?.id === chat?.id;
 
-                <MdDeleteOutline
-                  size={20}
-                  onClick={() => handleDeleteConversation(chat.id)}
-                  className="text-red-400 opacity-70 hover:opacity-100 hover:text-red-500 cursor-pointer transition hidden group-hover:block"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+      return (
+        <div
+          key={chat.id}
+          className={`flex items-center justify-between p-2 rounded mb-2 group transition
+            ${isActive ? "bg-blue-700 text-white" : "bg-gray-800 hover:bg-gray-700"}
+          `}
+        >
+          <button
+            onClick={() => router.push(`/chat/${chat.id}`)}
+            className="truncate text-left flex-1 cursor-pointer"
+          >
+            {chat.title || "Untitled Chat"}
+          </button>
+
+          <MdDeleteOutline
+            size={20}
+            onClick={(e) => {
+              e.stopPropagation(); // prevent opening chat when deleting
+              handleDeleteConversation(chat.id);
+            }}
+            className={`opacity-70 hover:opacity-100 transition ${
+              isActive ? "text-red-300" : "text-red-400"
+            } hidden group-hover:block`}
+          />
+        </div>
+      );
+    })}
+  </div>
+)}
+
       </div>
     </div>
   );

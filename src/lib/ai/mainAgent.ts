@@ -15,7 +15,7 @@ export async function mainAgent(userMessage: string, conversationId: string): Pr
   const lastMsg = lastState.messages.at(-1);
 
   if (!lastMsg?.content || typeof lastMsg.content !== "string") {
-    throw new Error("Invalid AI response");
+    throw new Error("Invalid AI response"); 
   }
 
   return lastMsg.content;

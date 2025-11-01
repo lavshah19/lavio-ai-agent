@@ -31,8 +31,21 @@ export async function getConversationMessages(conversationId: string) {
     }
 
     // 2. Fetch messages for the conversation
-    const messages = await prisma.message.findMany({
+    // const messages = await prisma.message.findMany({
+    //   where: { conversationId },
+    //   orderBy: { createdAt: "asc" },
+    // });
+
+  // after i add files upload feature i wiil use this reminder
+     const messages = await prisma.message.findMany({
       where: { conversationId },
+      include:{
+        attachedFiles:{
+          include: {
+            file: true,
+          }
+        }
+      },
       orderBy: { createdAt: "asc" },
     });
 
@@ -43,6 +56,34 @@ export async function getConversationMessages(conversationId: string) {
 
   }
 }
+
+
+
+
+// [
+//   {
+//     id: "msg1",
+//     role: "user",
+//     content: "What is in this image?",
+//     attachedFiles: [
+//       {
+//         id: "attach1",
+//         file: {
+//           id: "file1",
+//           fileName: "dog.png",
+//           fileType: "image/png",
+//           storageUrl: "https://your-cloud-storage/dog.png"
+//         }
+//       }
+//     ]
+//   },
+//   {
+//     id: "msg2",
+//     role: "ai",
+//     content: "It looks like a brown dog sitting on grass.",
+//     attachedFiles: []
+//   }
+// ]
 
 // get all conversations for user
 export async function getUserConversations() {
