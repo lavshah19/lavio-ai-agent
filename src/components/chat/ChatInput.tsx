@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { SetStateAction } from "react";
 import { IoSend } from "react-icons/io5";
 import { FiPaperclip } from "react-icons/fi";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { useFileUpload } from "@/lib/hooks/useFileUpload";
 
 interface ChatInputProps {
   value: string;
-  onChange: (val: string) => void;
+  onChange:  React.Dispatch<SetStateAction<string>>;
   onSubmit: () => void;
    fileContext: ReturnType<typeof useFileUpload>;
 }
