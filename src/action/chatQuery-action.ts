@@ -146,3 +146,51 @@ export async function deleteUserConversation(conversationId: string) {
     return { success: false, message: "Server error while deleting conversation" };
   }
 }
+
+
+
+
+
+
+export async function addMessageWithFiles(conversationId: string, role: "user" | "ai" | "system", content: string | null, uploadedFiles: { fileName: string; fileType: string; fileSize?: number | null; storageUrl: string; embeddingId?: string | null }[]) {
+  try {
+    // Step 1: Create Message
+    const message = await prisma.message.create({
+      data: {
+        role,
+        content,
+        conversationId,
+      },
+    });
+
+    // Step 2: If there are files, insert them and connect to message
+    if (uploadedFiles && uploadedFiles.length > 0) {
+      for (const file of uploadedFiles) {
+        // 2.1 Save file info in FileUpload
+        const savedFile = await prisma.fileUpload.create({
+          data: {
+            fileName: file.fileName,
+            fileType: file.fileType,
+            fileSize: file.fileSize,
+            storageUrl: file.storageUrl,
+            embeddingId: file.embeddingId,
+            conversationId,
+          },
+        });
+
+        // 2.2 Link file with message in FileAttachment
+        await prisma.fileAttachment.create({
+          data: {
+            messageId: message.id,
+            fileId: savedFile.id,
+          },
+        });
+      }
+    }
+
+    return { success: true, message: "Message added successfully", data: message };
+  } catch (error) {
+    console.error("Error adding message:", error);
+    return { success: false, message: "Failed to add message" };
+  }
+}

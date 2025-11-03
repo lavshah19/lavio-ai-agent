@@ -9,7 +9,7 @@ import { mainAgent } from "@/lib/ai/mainAgent";
 
 
 
-export async function ConversationWithAgent(formData: FormData) {
+export async function ConversationWithAgentAction(formData: FormData) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
