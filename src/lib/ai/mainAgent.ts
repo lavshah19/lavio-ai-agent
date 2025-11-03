@@ -1,12 +1,6 @@
+import { FileUpload } from "../types/fileType";
 import { graph } from "./stateGraph";
-type FileUpload = {
-  id: string;
-  fileName: string;
-  fileType: string;
-  fileSize?: number | null;
-  storageUrl: string;
-  embeddingId?: string | null;
-};
+
 
 export async function mainAgent(userMessage: string, conversationId: string,file: FileUpload[]): Promise<string> {
   const langGraphConfig = { configurable: { thread_id: conversationId } };

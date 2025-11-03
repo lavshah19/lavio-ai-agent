@@ -6,20 +6,6 @@ import type { DeleteResult } from "@/lib/types/cloudinary/cloudinary";
 import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
 // import { revalidatePath } from "next/cache";
 
-type UploadData = {
-  public_id: string;
-  format: string;
-  bytes: number;
-  secure_url: string;
-  original_filename: string;
-};
-
-type UploadResult = {
-  success: boolean;
-  data: UploadData | null;
-  message: string;
-};
-
 export async function uploadFileAction(formData: FormData) {
   try {
     const file = formData.get("file") as File;

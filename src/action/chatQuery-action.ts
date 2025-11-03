@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
 import { headers } from "next/headers";
-import { success } from "zod";
 
 // get conversation message
 export async function getConversationMessages(conversationId: string) {
@@ -17,17 +16,25 @@ export async function getConversationMessages(conversationId: string) {
       throw new Error("Unauthorized user");
     }
 
-      const conversation = await prisma.conversation.findUnique({
+    const conversation = await prisma.conversation.findUnique({
       where: { id: conversationId },
     });
 
     if (!conversation) {
-      return { success: false, message: "Conversation does not exist",conversations:[] };
+      return {
+        success: false,
+        message: "Conversation does not exist",
+        conversations: [],
+      };
     }
 
     // Optional: check ownership (if conversation has userId field)
     if (conversation.userId !== session.user.id) {
-      return { success: false, message: "You do not own this conversation",conversations:[]};
+      return {
+        success: false,
+        message: "You do not own this conversation",
+        conversations: [],
+      };
     }
 
     // 2. Fetch messages for the conversation
@@ -36,54 +43,33 @@ export async function getConversationMessages(conversationId: string) {
     //   orderBy: { createdAt: "asc" },
     // });
 
-  // after i add files upload feature i wiil use this reminder
-     const messages = await prisma.message.findMany({
+    // after i add files upload feature i wiil use this reminder
+    const messages = await prisma.message.findMany({
       where: { conversationId },
-      include:{
-        attachedFiles:{
+      include: {
+        attachedFiles: {
           include: {
             file: true,
-          }
-        }
+          },
+        },
       },
       orderBy: { createdAt: "asc" },
     });
 
-    return { success: true, message: "conversation fetch sucesfully",conversations:messages }; 
+    return {
+      success: true,
+      message: "conversation fetch sucesfully",
+      conversations: messages,
+    };
   } catch (error) {
     console.error("Error fetching conversation messages:", error);
-        return { success: false, message: "conversation fetch sucesfully",conversations:[] }; 
-
+    return {
+      success: false,
+      message: "conversation fetch sucesfully",
+      conversations: [],
+    };
   }
 }
-
-
-
-
-// [
-//   {
-//     id: "msg1",
-//     role: "user",
-//     content: "What is in this image?",
-//     attachedFiles: [
-//       {
-//         id: "attach1",
-//         file: {
-//           id: "file1",
-//           fileName: "dog.png",
-//           fileType: "image/png",
-//           storageUrl: "https://your-cloud-storage/dog.png"
-//         }
-//       }
-//     ]
-//   },
-//   {
-//     id: "msg2",
-//     role: "ai",
-//     content: "It looks like a brown dog sitting on grass.",
-//     attachedFiles: []
-//   }
-// ]
 
 // get all conversations for user
 export async function getUserConversations() {
@@ -102,11 +88,18 @@ export async function getUserConversations() {
       where: { userId: session.user.id },
       orderBy: { updatedAt: "desc" },
     });
-     return { success: true, message: "conversation fetch sucesfully",conversations:conversations };
-   
+    return {
+      success: true,
+      message: "conversation fetch sucesfully",
+      conversations: conversations,
+    };
   } catch (error) {
     console.error("Error fetching user conversations:", error);
-      return { success: true, message: "conversation fetch sucesfully",conversations:[] };
+    return {
+      success: true,
+      message: "conversation fetch sucesfully",
+      conversations: [],
+    };
   }
 }
 //delete conversation
@@ -143,54 +136,9 @@ export async function deleteUserConversation(conversationId: string) {
     return { success: true, message: "Conversation deleted successfully" };
   } catch (error) {
     console.error("Error deleting user conversation:", error);
-    return { success: false, message: "Server error while deleting conversation" };
-  }
-}
-
-
-
-
-
-
-export async function addMessageWithFiles(conversationId: string, role: "user" | "ai" | "system", content: string | null, uploadedFiles: { fileName: string; fileType: string; fileSize?: number | null; storageUrl: string; embeddingId?: string | null }[]) {
-  try {
-    // Step 1: Create Message
-    const message = await prisma.message.create({
-      data: {
-        role,
-        content,
-        conversationId,
-      },
-    });
-
-    // Step 2: If there are files, insert them and connect to message
-    if (uploadedFiles && uploadedFiles.length > 0) {
-      for (const file of uploadedFiles) {
-        // 2.1 Save file info in FileUpload
-        const savedFile = await prisma.fileUpload.create({
-          data: {
-            fileName: file.fileName,
-            fileType: file.fileType,
-            fileSize: file.fileSize,
-            storageUrl: file.storageUrl,
-            embeddingId: file.embeddingId,
-            conversationId,
-          },
-        });
-
-        // 2.2 Link file with message in FileAttachment
-        await prisma.fileAttachment.create({
-          data: {
-            messageId: message.id,
-            fileId: savedFile.id,
-          },
-        });
-      }
-    }
-
-    return { success: true, message: "Message added successfully", data: message };
-  } catch (error) {
-    console.error("Error adding message:", error);
-    return { success: false, message: "Failed to add message" };
+    return {
+      success: false,
+      message: "Server error while deleting conversation",
+    };
   }
 }
