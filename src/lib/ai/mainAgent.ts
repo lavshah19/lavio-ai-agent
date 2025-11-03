@@ -1,13 +1,21 @@
 import { graph } from "./stateGraph";
+type FileUpload = {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize?: number | null;
+  storageUrl: string;
+  embeddingId?: string | null;
+};
 
-export async function mainAgent(userMessage: string, conversationId: string): Promise<string> {
+export async function mainAgent(userMessage: string, conversationId: string,file: FileUpload[]): Promise<string> {
   const langGraphConfig = { configurable: { thread_id: conversationId } };
   const systemPrompt = "You are a helpful expert called lavio who provides concise answers.";
-
+  const finalUserPrompt = `${userMessage} ${file.length > 0 ?  "imageUrl:" + file[0].storageUrl : ''}`;
   const initialState = {
     messages: [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userMessage },
+      { role: "user", content: finalUserPrompt },
     ],
   };
 

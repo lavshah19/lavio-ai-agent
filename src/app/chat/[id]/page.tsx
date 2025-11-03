@@ -14,7 +14,7 @@ import { init, createId } from "@paralleldrive/cuid2";
 import Thinking from "@/components/chat/Thinking";
 import { AiOutlineClose, AiOutlineFilePdf } from "react-icons/ai";
 import { deleteFileAction, uploadFileAction } from "@/action/Cloudinary-action";
-import { set } from "zod";
+
 
 type FileUpload = {
   id: string;
@@ -197,30 +197,30 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
     const formData = new FormData();
     formData.set("userMessage", userContent as string);
     formData.set("conversationId", param.id as string);
-    formData.set("file", JSON.stringify(newMessage?.attachedFiles.map((file) => file.file) || []));
+    formData.set("file", JSON.stringify(newMessage?.attachedFiles.map((file) => file.file) || [])); 
 
     try {
-      // const aiResponse = await ConversationWithAgentAction(formData);
+      const aiResponse = await ConversationWithAgentAction(formData);
 
-      // setIsThinking(false); // <-- STOP thinking
+      setIsThinking(false); // <-- STOP thinking
 
-      // if (aiResponse?.AIMessage) {
-      //   const aiMessage: Message = {
-      //     id: createId(),
-      //     role: "ai",
-      //     content:
-      //       aiResponse.AIMessage.content || "Sorry, I encountered an issue.",
-      //     attachedFiles: [],
-      //   };
-      //   setMessages((prev) => [...prev, aiMessage]);
-      // } else {
-      //   // Handle cases where response is not as expected
-      //   toast.error("Failed to get a response from the AI.");
-      // }
+      if (aiResponse?.AIMessage) {
+        const aiMessage: Message = {
+          id: createId(),
+          role: "ai",
+          content:
+            aiResponse.AIMessage.content || "Sorry, I encountered an issue.",
+          attachedFiles: [],
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+      } else {
+        // Handle cases where response is not as expected
+        toast.error("Failed to get a response from the AI.");
+      }
     } catch (error) {
-      // console.error("Error in ConversationWithAgent:", error);
-      // setIsThinking(false); // <-- STOP thinking on error too
-      // toast.error("An unexpected error occurred.");
+      console.error("Error in ConversationWithAgent:", error);
+      setIsThinking(false); // <-- STOP thinking on error too
+      toast.error("An unexpected error occurred.");
     }
 
     if (initialMessage) {

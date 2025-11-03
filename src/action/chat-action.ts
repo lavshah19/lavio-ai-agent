@@ -15,15 +15,17 @@ export async function ConversationWithAgentAction(formData: FormData) {
   });
   if (!session?.user) throw new Error("Unauthorized user");
 
-  const { userMessage, conversationId } = validateFormData(formData);
+ 
+
+  const { userMessage, conversationId,file} = validateFormData(formData);
 
   try {
     // Run AI processing
-    const aiResponse = await mainAgent(userMessage, conversationId);
+    const aiResponse = await mainAgent(userMessage, conversationId,file);
 
     // Ensure conversation and persist messages
     await ensureConversationExists(conversationId, session.user.id, userMessage, baseModel);
-    return await saveMessages(conversationId, userMessage, aiResponse);
+    return await saveMessages(conversationId, userMessage, aiResponse,file);
   } catch (error) {
     console.error("Error creating conversation or messages:", error);
     throw new Error("Failed to process conversation");

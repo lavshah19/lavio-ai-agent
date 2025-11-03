@@ -1,5 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { ChatGroq } from "@langchain/groq";
+ // will make separate file later i am lazy :)
+type FileUpload = {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize?: number | null;
+  storageUrl: string;
+  embeddingId?: string | null;
+};
+
 
 /** Create a conversation if not existing */
 export async function ensureConversationExists(
@@ -33,7 +43,12 @@ export async function ensureConversationExists(
 }
 
 /** Save both the user and AI messages */
-export async function saveMessages(conversationId: string, userMessage: string, aiMessage: string) {
+export async function saveMessages(
+  conversationId: string,
+  userMessage: string,
+  aiMessage: string,
+  file: FileUpload[]
+) {
   const [userMsg, aiMsg] = await prisma.$transaction([
     prisma.message.create({
       data: { conversationId, role: "user", content: userMessage },
@@ -42,6 +57,28 @@ export async function saveMessages(conversationId: string, userMessage: string, 
       data: { conversationId, role: "ai", content: aiMessage },
     }),
   ]);
+
+  if (file.length > 0) {
+    // Create file record first
+    const savedFile = await prisma.fileUpload.create({
+      data: {
+        fileName: file[0].fileName,
+        fileType: file[0].fileType,
+        fileSize: file[0].fileSize,
+        storageUrl: file[0].storageUrl,
+        embeddingId: file[0].embeddingId,
+        conversationId,
+      },
+    });
+
+    // Attach to user message
+    await prisma.fileAttachment.create({
+      data: {
+        messageId: userMsg.id,
+        fileId: savedFile.id, // ✅ use saved file id
+      },
+    });
+  }
 
   return {
     AIMessage: {
