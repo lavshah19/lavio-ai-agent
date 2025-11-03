@@ -15,9 +15,9 @@ datasource db {
 }
 
 model User {
-  id            String         @id @map("_id")
+  id            String         @id @default(cuid()) @map("_id")
   name          String
-  email         String
+  email         String         @unique
   emailVerified Boolean        @default(false)
   image         String?
   createdAt     DateTime       @default(now())
@@ -31,14 +31,13 @@ model User {
   conversations Conversation[]
   fileUploads   FileUpload[]
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
-  id             String   @id @map("_id")
+  id             String   @id @default(cuid()) @map("_id")
   expiresAt      DateTime
-  token          String
+  token          String   @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   ipAddress      String?
@@ -47,12 +46,11 @@ model Session {
   user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   impersonatedBy String?
 
-  @@unique([token])
   @@map("session")
 }
 
 model Account {
-  id                    String    @id @map("_id")
+  id                    String    @id @default(cuid()) @map("_id")
   accountId             String
   providerId            String
   userId                String
@@ -71,7 +69,7 @@ model Account {
 }
 
 model Verification {
-  id         String   @id @map("_id")
+  id         String   @id @default(cuid()) @map("_id")
   identifier String
   value      String
   expiresAt  DateTime
@@ -82,7 +80,7 @@ model Verification {
 }
 
 model Conversation {
-  id        String   @id @map("_id")
+  id        String   @id @default(cuid()) @map("_id")
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String?
@@ -97,14 +95,13 @@ model Conversation {
 }
 
 model Message {
-  id             String       @id @map("_id")
+  id             String       @id @default(cuid()) @map("_id")
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-
-  role      MessageRole
-  content   String?
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  role           MessageRole
+  content        String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   attachedFiles FileAttachment[]
 
@@ -112,7 +109,7 @@ model Message {
 }
 
 model FileUpload {
-  id             String        @id @map("_id")
+  id             String        @id @default(cuid()) @map("_id")
   userId         String?
   conversationId String?
   user           User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -130,7 +127,7 @@ model FileUpload {
 }
 
 model FileAttachment {
-  id        String     @id @map("_id")
+  id        String     @id @default(cuid()) @map("_id")
   messageId String
   fileId    String
   message   Message    @relation(fields: [messageId], references: [id], onDelete: Cascade)

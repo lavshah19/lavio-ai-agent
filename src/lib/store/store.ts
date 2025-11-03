@@ -1,36 +1,59 @@
 import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 type Store = {
   isOpen: boolean;
   setIsOpen: () => void;
 };
 
-export const useIsopen = create<Store>()((set) => ({
-  isOpen: true,
-  setIsOpen: () => set((state) => ({ isOpen: !state.isOpen })),
-}));
+export const useIsopen = create<Store>()(
+  persist(
+    (set) => ({
+      isOpen: true,
+      setIsOpen: () => set((state) => ({ isOpen: !state.isOpen })),
+    }),
+    {
+      name: "isOpen-storage", // key name in localStorage
+      //  storage: createJSONStorage(() => localStorage), // use sessionStorage if needed
+    }
+  )
+);
+
+type FileUpload = {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize?: number | null;
+  storageUrl: string;
+  embeddingId?: string | null;
+  
+};
+
+type FileAttachment = {
+  id: string;
+  messageId: string;
+  fileId: string;
+  file: FileUpload;
+};
 
 type Message = {
-  id: number;
-  sender: "user" | "ai";
-  text: string;
-  time: string;
+  id: string;
+  role: "user" | "ai" | "system";
+  content: string | null ;
+  attachedFiles: FileAttachment[]; // added relation
 };
 
 type MessageStore = {
-  messages: Message[];
+  initialMessage: Message | null;
   addMessage: (message: Omit<Message, "id">) => void;
   clearMessages: () => void;
 };
 
 export const useMessageStore = create<MessageStore>((set, get) => ({
-  messages: [],
+   initialMessage: null,
   addMessage: (message) =>
     set({
-      messages: [
-        ...get().messages,
-        { id: Date.now(), ...message }, // auto-generate unique ID
-      ],
+      initialMessage: { id: Date.now().toLocaleString(), ...message }, // auto-generate unique ID
     }),
-  clearMessages: () => set({ messages: [] }),
+  clearMessages: () => set({  initialMessage: null }),
 }));
