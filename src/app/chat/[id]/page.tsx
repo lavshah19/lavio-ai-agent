@@ -21,10 +21,7 @@ const SingleChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>("");
   const { initialMessage, clearMessages } = useMessageStore();
-
   const fileContext = useFileUpload();
-  // const { uploadedFile, setUploadedFile } = fileContext;
-
   // Ref for auto-scroll
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const hasFetched = useRef(false);
@@ -48,7 +45,7 @@ const SingleChat = () => {
   }, [messages]);
 
   async function handleSend(initialMessage?: Message) {
-     const { uploadedFile, setUploadedFile} = fileContext;
+    const { uploadedFile, setUploadedFile } = fileContext;
     const userContent = initialMessage?.content || inputValue;
     if (!userContent.trim()) return;
     const attachments: FileAttachment[] = initialMessage?.attachedFiles?.length
@@ -149,7 +146,7 @@ const SingleChat = () => {
 
           <div className="text-center mt-2">
             <p className="text-xs text-gray-600">
-              Powered by AI • Type your message or use voice
+              Powered by AI • Type your message and press Enter
             </p>
           </div>
         </div>

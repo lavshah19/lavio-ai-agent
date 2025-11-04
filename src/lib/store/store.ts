@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { Message } from "../types/fileType";
+import { createId } from "@paralleldrive/cuid2";
 
 type Store = {
   isOpen: boolean;
@@ -19,29 +21,6 @@ export const useIsopen = create<Store>()(
   )
 );
 
-type FileUpload = {
-  id: string;
-  fileName: string;
-  fileType: string;
-  fileSize?: number | null;
-  storageUrl: string;
-  embeddingId?: string | null;
-  
-};
-
-type FileAttachment = {
-  id: string;
-  messageId: string;
-  fileId: string;
-  file: FileUpload;
-};
-
-type Message = {
-  id: string;
-  role: "user" | "ai" | "system";
-  content: string | null ;
-  attachedFiles: FileAttachment[]; // added relation
-};
 
 type MessageStore = {
   initialMessage: Message | null;
@@ -53,7 +32,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
    initialMessage: null,
   addMessage: (message) =>
     set({
-      initialMessage: { id: Date.now().toLocaleString(), ...message }, // auto-generate unique ID
+      initialMessage: { id: createId(), ...message }, // auto-generate unique ID
     }),
   clearMessages: () => set({  initialMessage: null }),
 }));
