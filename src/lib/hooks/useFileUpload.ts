@@ -3,12 +3,15 @@ import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { uploadFileAction, deleteFileAction } from "@/action/Cloudinary-action";
 import { DeleteResult, FileUpload, UploadResult } from "../types/fileType";
+import { createId } from "@paralleldrive/cuid2";
+import { useConversationStore } from "../store/store";
 
 
 export function useFileUpload() {
   const [uploadedFile, setUploadedFile] = useState<FileUpload | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+   const {conversationId,setConversationId}=useConversationStore();
 
   const handleAttachmentClick = () => {
     fileInputRef.current?.click();
@@ -25,6 +28,7 @@ export function useFileUpload() {
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("conversationId", conversationId);
 
     try {
       setIsUploading(true);
@@ -74,6 +78,8 @@ export function useFileUpload() {
     uploadedFile,
     isUploading,
     setUploadedFile,
-    setIsUploading
+    setIsUploading,
+    conversationId,
+    setConversationId
   };
 }

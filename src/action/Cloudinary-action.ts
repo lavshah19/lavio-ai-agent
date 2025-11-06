@@ -3,23 +3,48 @@
 import cloudinary from "@/lib/cloudinary/cloudinary";
 import type { DeleteResult } from "@/lib/types/cloudinary/cloudinary";
 
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { writeFile, mkdir } from "fs/promises";
 import { UploadApiResponse, UploadApiErrorResponse } from "cloudinary";
-// import { revalidatePath } from "next/cache";
+
+
+import path from "path";
+import { addDocsToVectorDB } from "@/lib/vectorStore/addDocsToVectorDB";
 
 export async function uploadFileAction(formData: FormData) {
   try {
     const file = formData.get("file") as File;
     if (!file) throw new Error("No file found in request");
+    const conversationId = formData.get("conversationId") as string;
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+if (file.type === "application/pdf") {
+      // Create uploads folder if not exist
+      const uploadDir = path.join(process.cwd(), "uploads");
+      await mkdir(uploadDir, { recursive: true });
+
+      // Define local file path
+      const filePath = path.join(uploadDir, file.name);
+
+      // Save file locally
+      await writeFile(filePath, buffer);
+
+      // Load and process PDF
+      const loader = new PDFLoader(filePath);
+      const docs = await loader.load();
+
+      // Convert to embeddings and save to vector DB
+       await addDocsToVectorDB(docs, conversationId);
+      console.log("PDF loaded and processed");
+    }
     const uploadResult = await new Promise<UploadApiResponse>((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         {
           folder: "chat",
           resource_type: "auto",
-          access_mode: "public",
+        
         },
         (error?: UploadApiErrorResponse, result?: UploadApiResponse) => {
           if (error) return reject(error);
@@ -53,7 +78,7 @@ export async function uploadFileAction(formData: FormData) {
 export async function deleteFileAction(publicId: string): Promise<DeleteResult> {
   try {
     const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: "image",
+      resource_type: "raw",
     });
 
     return {

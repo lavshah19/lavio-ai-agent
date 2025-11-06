@@ -36,3 +36,13 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     }),
   clearMessages: () => set({  initialMessage: null }),
 }));
+
+type ConversationStore = {
+  conversationId: string;
+  setConversationId: (conversationId: string) => void;
+};
+
+export const useConversationStore = create<ConversationStore>((set) => ({
+  conversationId: "",
+  setConversationId: (conversationId) => set({ conversationId }),
+}));

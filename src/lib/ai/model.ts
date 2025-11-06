@@ -1,6 +1,7 @@
 import { ChatGroq } from "@langchain/groq";
 import { TavilySearch } from "@langchain/tavily";
 import { describeImageTool } from "./tools/imageTool";
+import { retrieveSimilarTool } from "./tools/retrieveSimilarTool";
 
 const SearchEnginetool = new TavilySearch({
   maxResults: 3,
@@ -8,7 +9,7 @@ const SearchEnginetool = new TavilySearch({
   tavilyApiKey: process.env.TAVILY_API_KEY,
   description:"Useful for answering general questions by searching the web for relevant information. this tools is not for image description or analysis.",
 });
-export const tools = [SearchEnginetool,describeImageTool];
+export const tools = [SearchEnginetool,describeImageTool,retrieveSimilarTool];
 
 export const baseModel = new ChatGroq({
   model: "openai/gpt-oss-120b",

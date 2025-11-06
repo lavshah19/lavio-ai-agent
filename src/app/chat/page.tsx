@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { IoSparkles } from "react-icons/io5";
 import { HiLightBulb } from "react-icons/hi";
 import { RiChatSmile3Line } from "react-icons/ri";
@@ -14,6 +14,7 @@ import { useFileUpload } from "@/lib/hooks/useFileUpload";
 const Chat = () => {
   const [message, setMessage] = useState("");
   const { addMessage } = useMessageStore();
+
   const router = useRouter();
 
   const suggestedPrompts = [
@@ -22,15 +23,17 @@ const Chat = () => {
     { icon: <RiChatSmile3Line />, text: "Tell me a joke" },
   ];
 
-  const fileContext = useFileUpload();
 
+  const fileContext = useFileUpload();
+   const { conversationId,setConversationId } = fileContext;
+  console.log(conversationId);
   async function handleSubmit() {
-    const { uploadedFile, setUploadedFile, isUploading, setIsUploading } =
+    const { uploadedFile, setUploadedFile, isUploading,} =
       fileContext;
     if (!message || isUploading) return;
 
     const messageId = createId();
-    const conversationId = init();
+    // const conversationId = init();
 
     const attachments: FileAttachment[] = uploadedFile
       ? [
@@ -51,8 +54,12 @@ const Chat = () => {
 
     setMessage("");
     setUploadedFile(null);
-    router.push(`/chat/${conversationId()}`);
+    router.push(`/chat/${conversationId}`);
   }
+
+  useEffect(()=>{
+    setConversationId(createId());
+  },[])
 
   return (
     <div className="h-[calc(100vh-72px)] bg-gray-900 flex justify-center items-center">

@@ -17,7 +17,7 @@ import MessageDisplay from "@/components/chat/MessageDisplay";
 
 const SingleChat = () => {
   const [isThinking, setIsThinking] = useState(false);
-  const param = useParams();
+  const param: { id: string } = useParams();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState<string>("");
   const { initialMessage, clearMessages } = useMessageStore();
@@ -25,7 +25,8 @@ const SingleChat = () => {
   // Ref for auto-scroll
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const hasFetched = useRef(false);
-
+   const {conversationId,setConversationId} = fileContext;
+console.log(conversationId);
   async function fetchConversation() {
     const fetchedMessages: ConversationFetchResponse =
       (await getConversationMessages(param.id as string)) ?? [];
@@ -122,6 +123,13 @@ const SingleChat = () => {
       fetchConversation();
     }
   }, []);
+
+  useEffect(()=>{
+    if(param.id){
+      setConversationId(param.id);
+    }
+
+  },[param.id])
 
   return (
     <div className="h-[calc(100vh-72px)] bg-gray-900 flex flex-col">
