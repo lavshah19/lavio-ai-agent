@@ -10,11 +10,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { checkIfUserHasSubscription } from "@/action/subscription-action";
 
 const Navbar = () => {
   const { data: session, isPending } = useSession();
   const pathName = usePathname();
   const router = useRouter();
+   const [hasSubscription, setHasSubscription] = useState<boolean>(false);
   const handleLogout = async () => {
     await signOut({
       fetchOptions: {
@@ -24,6 +27,15 @@ const Navbar = () => {
       },
     });
   };
+
+    useEffect(() => {
+      async function loadSubscription() {
+        const result = await checkIfUserHasSubscription();
+        setHasSubscription(result);
+      }
+  
+      loadSubscription();
+    }, []);
   function getInitalUserName(userName:string):string{
   // console.log(userName.charAt(0).toUpperCase())
   return userName.charAt(0).toUpperCase()
@@ -39,11 +51,13 @@ const Navbar = () => {
       </div>
 
       {/* Plan Upgrade */}
-      <div>
-        <Button className="bg-purple-600 text-white hover:bg-purple-500 px-4 py-2 rounded-lg transition">
+   {
+    !hasSubscription && (   <div>
+        <Button className="bg-purple-600 cursor-pointer text-white hover:bg-purple-500 px-4 py-2 rounded-lg transition" onClick={() => router.push("/plans")} >
           Upgrade Plan
         </Button>
-      </div>
+      </div>)
+   }
 
       {/* User Profile */}
       <div>

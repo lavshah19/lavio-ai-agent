@@ -12,7 +12,7 @@ export async function mainAgent(userMessage: string, conversationId: string,file
     
   }else{
 finalUserPrompt = `${userMessage} ${file.length > 0 ?  "imageUrl:" + file[0].storageUrl : ''}  ${file.length > 0 ? "conversationId:" + conversationId : ''}`;
-console.log("inside image");
+// console.log("inside image");
   }
    
   const initialState = {

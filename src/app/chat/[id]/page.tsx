@@ -25,7 +25,7 @@ const SingleChat = () => {
   // Ref for auto-scroll
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const hasFetched = useRef(false);
-   const {conversationId,setConversationId} = fileContext;
+   const {setConversationId,conversationId} = fileContext;
 console.log(conversationId);
   async function fetchConversation() {
     const fetchedMessages: ConversationFetchResponse =
@@ -70,9 +70,9 @@ console.log(conversationId);
     };
 
     setMessages((prev) => [...prev, newMessage]);
-    setInputValue(""); // Clear input immediately for better UX
+    setInputValue(""); 
     setUploadedFile(null);
-    setIsThinking(true); // <-- START thinking
+    setIsThinking(true); 
 
     const formData = new FormData();
     formData.set("userMessage", userContent as string);
@@ -85,7 +85,11 @@ console.log(conversationId);
     try {
       const aiResponse = await ConversationWithAgentAction(formData);
 
-      setIsThinking(false); // <-- STOP thinking
+      setIsThinking(false); 
+        if (!aiResponse.success) {
+    toast.error(aiResponse.message || "something went wrong");
+    return;
+  }
 
       if (aiResponse?.AIMessage) {
         const aiMessage: Message = {
@@ -102,8 +106,8 @@ console.log(conversationId);
       }
     } catch (error) {
       console.error("Error in ConversationWithAgent:", error);
-      setIsThinking(false); // <-- STOP thinking on error too
-      toast.error("An unexpected error occurred.");
+      setIsThinking(false); 
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred.");
     }
 
     if (initialMessage) {

@@ -1,3 +1,4 @@
+import { checkIfUserHasSubscription } from "@/action/subscription-action";
 import { prisma } from "@/lib/prisma";
 import { ChatGroq } from "@langchain/groq";
  // will make separate file later i am lazy :)
@@ -47,7 +48,8 @@ export async function saveMessages(
   conversationId: string,
   userMessage: string,
   aiMessage: string,
-  file: FileUpload[]
+  file: FileUpload[],
+  userId: string
 ) {
   const [userMsg, aiMsg] = await prisma.$transaction([
     prisma.message.create({
@@ -80,12 +82,30 @@ export async function saveMessages(
     });
   }
 
-  return {
-    AIMessage: {
-      id: aiMsg.id,
-      content: aiMsg.content,
-      createdAt: aiMsg.createdAt,
-      role: "ai",
-    },
-  };
+  const hasSubscription = await checkIfUserHasSubscription();
+  if (!hasSubscription) {
+    await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        trialCount: {
+          decrement: 1,
+        },
+      },
+    });
+  }
+
+
+return {
+  success: true,
+  message: "Message saved successfully",
+  AIMessage: {
+    id: aiMsg.id,
+    content: aiMsg.content,
+    createdAt: aiMsg.createdAt,
+    role: "ai",
+  },
+
+};
 }

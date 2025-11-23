@@ -32,7 +32,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
    initialMessage: null,
   addMessage: (message) =>
     set({
-      initialMessage: { id: createId(), ...message }, // auto-generate unique ID
+      initialMessage: { id: createId(), ...message }, 
     }),
   clearMessages: () => set({  initialMessage: null }),
 }));

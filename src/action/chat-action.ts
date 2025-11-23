@@ -2,11 +2,14 @@
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { ensureConversationExists, saveMessages } from "@/lib/ai/conversationService";
+import {
+  ensureConversationExists,
+  saveMessages,
+} from "@/lib/ai/conversationService";
 import { validateFormData } from "@/lib/validation/conversationSchema";
 import { baseModel } from "@/lib/ai/model";
 import { mainAgent } from "@/lib/ai/mainAgent";
-
+import { checkUserSubscriptionAndTrial } from "@/lib/ai/checkUserSubscriptionAndTrial";
 
 
 export async function ConversationWithAgentAction(formData: FormData) {
@@ -15,17 +18,30 @@ export async function ConversationWithAgentAction(formData: FormData) {
   });
   if (!session?.user) throw new Error("Unauthorized user");
 
- 
-
-  const { userMessage, conversationId,file} = validateFormData(formData);
+  const { userMessage, conversationId, file } = validateFormData(formData);
 
   try {
-    // Run AI processing
-    const aiResponse = await mainAgent(userMessage, conversationId,file);
+  
+      const subscriptionCheck = await checkUserSubscriptionAndTrial(session.user.id);
+    if (!subscriptionCheck.success) {
+      return subscriptionCheck;
+    }
+    const aiResponse = await mainAgent(userMessage, conversationId, file);
 
-    // Ensure conversation and persist messages
-    await ensureConversationExists(conversationId, session.user.id, userMessage, baseModel);
-    return await saveMessages(conversationId, userMessage, aiResponse,file);
+   
+    await ensureConversationExists(
+      conversationId,
+      session.user.id,
+      userMessage,
+      baseModel
+    );
+    return await saveMessages(
+      conversationId,
+      userMessage,
+      aiResponse,
+      file,
+      session.user.id
+    );
   } catch (error) {
     console.error("Error creating conversation or messages:", error);
     throw new Error("Failed to process conversation");
